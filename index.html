@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>唆唆螺｜訂貨計算器</title>
+    <!-- 唆唆螺：Safari / iPhone / 加入主畫面 / 喜好項目完整圖示設定 -->
+    <!-- Safari、Chrome、Edge、Firefox 分頁與喜好項目 -->
+    <link rel="icon" href="https://serendipiiity.github.io/fragranceart1/suosuoluo.ico" sizes="any">
+    <link rel="shortcut icon" href="https://serendipiiity.github.io/fragranceart1/suosuoluo.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://serendipiiity.github.io/fragranceart1/suosuoluo-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://serendipiiity.github.io/fragranceart1/suosuoluo-192.png">
+
+    <!-- iPhone / iPad Safari 加入主畫面 -->
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="apple-touch-icon-152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180.png">
+    <link rel="apple-touch-icon-precomposed" sizes="180x180" href="apple-touch-icon-180.png">
+
+    <!-- iOS Web App -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="唆唆螺訂貨">
+
+    <!-- Android / Chrome / PWA -->
+    <link rel="manifest" href="site.webmanifest">
+    <meta name="theme-color" content="#E36A0A">
+    <meta name="application-name" content="唆唆螺｜訂貨計算器">
+<!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com/">
+        /* Keep the last clicked backend product code visually selected. */
+        document.addEventListener('click', function (event) {
+            const output = document.getElementById('backend-output');
+            if (!output || !output.contains(event.target)) return;
+
+            const target = event.target.closest('.backend-code, [data-code], button, span[onclick]');
+            if (!target || !output.contains(target)) return;
+
+            output.querySelectorAll('.code-selected').forEach(el => el.classList.remove('code-selected'));
+            target.classList.add('code-selected');
+        });
+
+    </script>
+    <!-- FontAwesome CDN for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Chiron GoRound TC -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chiron+GoRound+TC:wght@200..900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: "Chiron GoRound TC", sans-serif;
+            font-optical-sizing: auto;
+            font-style: normal;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Hide arrows in input number */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+            font-size: 16px !important; /* Prevents auto-zoom on iOS */
+        }
+        /* Touch optimization: prevent double-tap zoom, tap delay, and accidental text selection on interactive elements */
+        .touch-btn,
+        button,
+        input,
+        select,
+        textarea,
+        a {
+            touch-action: manipulation;
+        }
+        button {
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Dynamic scroll margin top for sticky header offset */
+        .scroll-target {
+            scroll-margin-top: var(--header-height, 160px);
+        }
+
+
+        /* =========================================================
+           唆唆螺品牌主題｜紅陶 × 胭脂 × 米白
+           保留紅色調，增加深淺層次與柔和背景動畫。
+           ========================================================= */
+        :root {
+            --brand-red-900: #5C2020;
+            --brand-red-800: #712727;
+            --brand-red-700: #8F3130;
+            --brand-red-600: #A9443E;
+            --brand-red-500: #BF5C50;
+            --brand-red-400: #D47C6D;
+            --brand-red-300: #E5A79B;
+            --brand-red-200: #F0CEC7;
+            --brand-red-100: #FCF3F1;
+            --brand-red-50:  #FCF4F1;
+            --brand-cream: #FFF9F6;
+            --brand-cream-deep: #F8EEE9;
+            --brand-line: #E9D2CC;
+            --brand-text: #4B2423;
+            --brand-muted: #8C6964;
+        }
+
+        html { background: var(--brand-cream); }
+        body {
+            position: relative;
+            overflow-x: hidden;
+            background:
+                radial-gradient(circle at 8% 4%, rgba(191,92,80,.13), transparent 26%),
+                radial-gradient(circle at 92% 16%, rgba(143,49,48,.10), transparent 24%),
+                linear-gradient(180deg, #FFF9F6 0%, #FCF3EF 46%, #F9ECE7 100%) !important;
+            color: var(--brand-text) !important;
+        }
+
+        /* Falling noodle bowls: slow decorative fall; bowls disappear after leaving the viewport */
+        .bowl-rain {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .noodle-bowl {
+            position: absolute;
+            width: var(--size);
+            height: calc(var(--size) * .82);
+            opacity: var(--opacity);
+            color: var(--tone);
+            will-change: transform;
+            filter: blur(.02px);
+        }
+        .noodle-bowl .bowl-body {
+            position: absolute;
+            left: 12%;
+            bottom: 1%;
+            width: 76%;
+            height: 48%;
+            border: max(1px, calc(var(--size) * .052)) solid currentColor;
+            border-top-width: max(1px, calc(var(--size) * .042));
+            border-radius: 8% 8% 48% 48% / 16% 16% 78% 78%;
+            box-sizing: border-box;
+        }
+        .noodle-bowl .rim {
+            position: absolute;
+            left: 8%;
+            bottom: 43%;
+            width: 84%;
+            height: 17%;
+            border: max(1px, calc(var(--size) * .046)) solid currentColor;
+            border-radius: 50%;
+            box-sizing: border-box;
+            background: rgba(255,249,246,.28);
+        }
+        .noodle-bowl .noodle {
+            position: absolute;
+            bottom: 51%;
+            width: 3%;
+            height: 28%;
+            border-radius: 999px;
+            background: currentColor;
+            transform-origin: bottom center;
+        }
+        .noodle-bowl .n1 { left: 35%; transform: rotate(-8deg); }
+        .noodle-bowl .n2 { left: 47%; height: 34%; transform: rotate(3deg); }
+        .noodle-bowl .n3 { left: 59%; height: 26%; transform: rotate(9deg); }
+        .noodle-bowl .chopstick,
+        .noodle-bowl .chopstick2 {
+            position: absolute;
+            left: 48%;
+            bottom: 55%;
+            width: 54%;
+            height: max(1px, calc(var(--size) * .037));
+            border-radius: 999px;
+            background: currentColor;
+            transform-origin: left center;
+        }
+        .noodle-bowl .chopstick { transform: rotate(-47deg); }
+        .noodle-bowl .chopstick2 { left: 44%; bottom: 60%; transform: rotate(-41deg); }
+        @media (max-width: 640px) {
+            .noodle-bowl { opacity: calc(var(--opacity) * .9); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .bowl-rain { display: none !important; }
+        }
+        #frontend-page, #backend-page { position: relative; z-index: 1; }
+
+        /* Backend: force all regular text to use Chiron GoRound TC without overriding Font Awesome icons. */
+        #backend-page,
+        #backend-page input,
+        #backend-page textarea,
+        #backend-page button,
+        #backend-page label,
+        #backend-page p,
+        #backend-page h2,
+        #backend-page h3,
+        #backend-page div:not(.fa):not(.fas):not(.far):not(.fab) {
+            font-family: "Chiron GoRound TC", sans-serif !important;
+            font-optical-sizing: auto;
+            font-style: normal;
+        }
+        #backend-page i[class*="fa-"] {
+            font-family: "Font Awesome 6 Free" !important;
+        }
+
+        header {
+            background: rgba(255,249,246,.93) !important;
+            border-color: var(--brand-line) !important;
+            box-shadow: 0 8px 30px rgba(92,32,32,.08) !important;
+        }
+        header h1, h1, h2, h3, h4 { color: var(--brand-text) !important; }
+
+        /* Header total */
+        header [class~="bg-orange-50/80"] {
+            background: linear-gradient(135deg, #FBEDEA, #F5DAD5) !important;
+            border-color: #EBC6BE !important;
+        }
+
+        /* Primary actions */
+        [class~="bg-orange-600"] { background-color: var(--brand-red-700) !important; }
+        [class~="bg-orange-600"]:hover { background-color: var(--brand-red-800) !important; }
+        [class~="bg-orange-600"]:active { background-color: var(--brand-red-900) !important; }
+        [class~="text-orange-600"] { color: var(--brand-red-700) !important; }
+        [class~="text-orange-700"], [class~="text-orange-900"] { color: var(--brand-red-800) !important; }
+        [class~="border-orange-100"], [class~="border-orange-100/80"] { border-color: #EFD7D1 !important; }
+        [class~="border-orange-200"], [class~="border-orange-200/80"] { border-color: #E7C2BA !important; }
+        [class~="bg-orange-50"], [class~="bg-orange-50/70"] { background-color: #FBEDE9 !important; }
+        [class~="bg-orange-100"], [class~="bg-orange-100/70"], [class~="bg-orange-100/80"] { background-color: #F5DCD6 !important; }
+        [class~="shadow-orange-200"] { --tw-shadow-color: rgba(143,49,48,.18) !important; }
+
+        /* Warm neutral system */
+        [class~="bg-slate-50"], [class~="bg-slate-50/60"], [class~="bg-slate-50/80"] { background-color: #FCF5F2 !important; }
+        [class~="bg-slate-100"] { background-color: #F7ECE8 !important; }
+        [class~="bg-white"] { background-color: rgba(255,252,249,.97) !important; }
+        [class~="text-slate-900"], [class~="text-slate-800"], [class~="text-slate-700"] { color: var(--brand-text) !important; }
+        [class~="text-slate-600"], [class~="text-slate-500"] { color: var(--brand-muted) !important; }
+        [class~="text-slate-400"] { color: #AA8A84 !important; }
+        [class~="border-slate-200"], [class~="border-slate-200/80"], [class~="border-slate-200/60"], [class~="border-slate-100"] { border-color: var(--brand-line) !important; }
+        [class~="bg-slate-800"], [class~="bg-slate-900"] { background-color: var(--brand-red-900) !important; }
+        [class~="bg-slate-800"]:hover, [class~="bg-slate-900"]:hover { background-color: #481818 !important; }
+
+        /* Category pills: same red family, deliberately different depth */
+        [class~="bg-amber-100/80"], [class~="bg-amber-100"] { background-color: #F8E5DE !important; }
+        [class~="bg-orange-100/80"], [class~="bg-orange-100"] { background-color: #F4D8D1 !important; }
+        [class~="bg-rose-100/80"], [class~="bg-rose-100"] { background-color: #F2CFCC !important; }
+        [class~="bg-emerald-100/80"], [class~="bg-emerald-100"] { background-color: #F7E1DC !important; }
+        [class~="bg-purple-100/80"], [class~="bg-purple-100"] { background-color: #EFCBC6 !important; }
+        [class~="bg-teal-100/80"], [class~="bg-teal-100"] { background-color: #F9E9E5 !important; }
+        [class~="bg-cyan-100/80"], [class~="bg-cyan-100"] { background-color: #EDD1CB !important; }
+        [class~="text-amber-700"], [class~="text-orange-700"], [class~="text-orange-700"], [class~="text-emerald-700"], [class~="text-purple-700"], [class~="text-teal-700"], [class~="text-cyan-700"],
+        [class~="text-amber-800"], [class~="text-orange-800"], [class~="text-rose-800"], [class~="text-emerald-800"], [class~="text-purple-800"], [class~="text-teal-800"], [class~="text-cyan-800"] { color: var(--brand-red-700) !important; }
+        [class~="border-amber-200"], [class~="border-orange-200"], [class~="border-orange-200"], [class~="border-emerald-200"], [class~="border-purple-200"], [class~="border-teal-200"], [class~="border-cyan-200"] { border-color: #E6C0B8 !important; }
+
+        /* Top product-category buttons: one solid color each, progressively deeper from left to right. */
+        .category-quick-nav > button:nth-child(1) { background: #FEFAF9 !important; }
+        .category-quick-nav > button:nth-child(2) { background: #FCF3F1 !important; }
+        .category-quick-nav > button:nth-child(3) { background: #F8E8E4 !important; }
+        .category-quick-nav > button:nth-child(4) { background: #F3DCD7 !important; }
+        .category-quick-nav > button:nth-child(5) { background: #EDCEC7 !important; }
+        .category-quick-nav > button:nth-child(6) { background: #E5BCB4 !important; }
+        .category-quick-nav > button:nth-child(7) { background: #D9A49D !important; }
+        .category-quick-nav > button:nth-child(-n+7) {
+            border-color: rgba(122,41,41,.18) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.28);
+        }
+        .category-quick-nav > button:nth-child(-n+7):hover { filter: brightness(.97); }
+        .category-quick-nav > button:nth-child(-n+7),
+        .category-quick-nav > button:nth-child(-n+7) i { color: #71302D !important; }
+        /* nth-child 8 = 訂購明細, nth-child 9 = 後台 — intentionally unchanged. */
+
+        /* Category cards */
+        #tables-container > div {
+            background: rgba(255,252,249,.965) !important;
+            border-color: var(--brand-line) !important;
+            box-shadow: 0 7px 22px rgba(92,32,32,.055) !important;
+        }
+        #tables-container > div > div:first-child {
+            background: linear-gradient(90deg, #FBF1EE 0%, #F7E5E0 100%) !important;
+            border-color: var(--brand-line) !important;
+        }
+
+        input[type="number"], textarea, #summary-box, #backend-output {
+            background-color: #FFF9F6 !important;
+            border-color: var(--brand-line) !important;
+            color: var(--brand-text) !important;
+        }
+        input[type="number"]:focus, textarea:focus {
+            --tw-ring-color: rgba(143,49,48,.25) !important;
+            border-color: var(--brand-red-400) !important;
+        }
+        .inline-flex.items-center.space-x-1.5, .inline-flex.items-center.space-x-1 {
+            background: #F5E4DF !important;
+            border-color: #E7CFC8 !important;
+        }
+
+        .brand-total-card {
+            background: linear-gradient(135deg, #F8E4DE 0%, #EFC9C1 52%, #FAEEE9 100%) !important;
+            border-color: #E1B7AE !important;
+            box-shadow: 0 12px 30px rgba(143,49,48,.11) !important;
+        }
+        #summary-section {
+            background: rgba(255,252,249,.97) !important;
+            border-color: var(--brand-line) !important;
+            box-shadow: 0 8px 24px rgba(92,32,32,.07) !important;
+        }
+        header img[alt="唆唆螺"] { filter: drop-shadow(0 2px 5px rgba(143,49,48,.13)); }
+        #frontend-mobile-bar {
+            background: rgba(248,232,228,.96) !important;
+            border-color: #E4BDB5 !important;
+            box-shadow: 0 -8px 24px rgba(92,32,32,.10) !important;
+        }
+        button:focus-visible, input:focus-visible, textarea:focus-visible {
+            outline: 2px solid rgba(143,49,48,.34);
+            outline-offset: 2px;
+        }
+
+    
+        /* Backend converted product codes: visible at a glance, stronger color when selected */
+        #backend-output .backend-code,
+        #backend-output [data-code],
+        #backend-output button,
+        #backend-output span[onclick] {
+            display: inline-block;
+            background-color: #F6E1DD !important;
+            border: 1px solid #E9C7C1 !important;
+            color: #71302D !important;
+            border-radius: 7px;
+            padding: 1px 5px;
+            margin: 1px 0;
+            transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+        }
+        #backend-output .backend-code:hover,
+        #backend-output [data-code]:hover,
+        #backend-output button:hover,
+        #backend-output span[onclick]:hover {
+            background-color: #EFCBC6 !important;
+            border-color: #DDA9A1 !important;
+        }
+        /* Backend password input + placeholder: force Chiron GoRound TC */
+        #backend-password,
+        #backend-password::placeholder {
+            font-family: "Chiron GoRound TC", sans-serif !important;
+            font-optical-sizing: auto;
+            font-style: normal;
+        }
+
+        #backend-output .backend-code.code-selected,
+        #backend-output [data-code].code-selected,
+        #backend-output button.code-selected,
+        #backend-output span[onclick].code-selected {
+            background-color: #D99D96 !important;
+            border-color: #BF7770 !important;
+            color: #5C2020 !important;
+        }
+
+
+        /* Backend uses Chiron GoRound TC as well */
+        #backend-page,
+        #backend-page input,
+        #backend-page textarea,
+        #backend-page button,
+        #backend-page #backend-output,
+        #backend-page .font-mono,
+        #backend-page .font-sans {
+            font-family: "Chiron GoRound TC", sans-serif !important;
+            font-optical-sizing: auto;
+            font-style: normal;
+        }
+
+    
+        /* All monetary amounts use Chiron GoRound TC */
+        #header-grand-total, #grand-total, #mobile-grand-total,
+        #tables-container .font-mono {
+            font-family: "Chiron GoRound TC", sans-serif !important;
+            font-optical-sizing: auto;
+            font-style: normal;
+        }
+
+        /* Order summary area uses Chiron GoRound TC */
+        #summary-section,
+        #summary-box,
+        #summary-box * {
+            font-family: "Chiron GoRound TC", sans-serif !important;
+            font-optical-sizing: auto;
+            font-style: normal;
+        }
+
+        /* Keep Font Awesome symbols/icons visible inside the order summary area */
+        #summary-section i.fa-solid,
+        #summary-section i.fa-regular,
+        #summary-section i.fa-brands {
+            font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands" !important;
+            font-optical-sizing: normal;
+            font-style: normal;
+        }
+
+        /* 橘色系主題覆寫 */
+        :root {
+            --brand-red-900:#8A3B08; --brand-red-800:#A94A0A; --brand-red-700:#C65A0A;
+            --brand-red-600:#E36A0A; --brand-red-500:#F07A16; --brand-red-400:#F59A4A;
+            --brand-red-300:#F8B978; --brand-red-200:#FBD6B1; --brand-red-100:#FFF0E1; --brand-red-50:#FFF8F1;
+            --brand-cream:#FFF9F3; --brand-cream-deep:#FFF1E4; --brand-line:#F3D4B8; --brand-text:#5B321A; --brand-muted:#9A7257;
+        }
+        body { background: radial-gradient(circle at 8% 4%, rgba(240,122,22,.14), transparent 26%), radial-gradient(circle at 92% 16%, rgba(198,90,10,.10), transparent 24%), linear-gradient(180deg,#FFF9F3 0%,#FFF3E7 48%,#FDEAD8 100%) !important; }
+        header { background:rgba(255,249,243,.94)!important; box-shadow:0 8px 30px rgba(138,59,8,.08)!important; }
+        [class~="bg-orange-600"] { background-color:#E36A0A!important; } [class~="bg-orange-600"]:hover { background-color:#C65A0A!important; }
+        [class~="text-orange-600"],[class~="text-orange-700"],[class~="text-orange-900"] { color:#C65A0A!important; }
+        [class~="bg-orange-50"],[class~="bg-orange-50/70"] { background-color:#FFF4E8!important; }
+        [class~="bg-orange-100"],[class~="bg-orange-100/70"],[class~="bg-orange-100/80"] { background-color:#FFE4C8!important; }
+        .category-quick-nav > button:nth-child(1){background:#FFF9F2!important}.category-quick-nav > button:nth-child(2){background:#FFF2E4!important}.category-quick-nav > button:nth-child(3){background:#FFEAD4!important}.category-quick-nav > button:nth-child(4){background:#FFE0BE!important}.category-quick-nav > button:nth-child(5){background:#FFD5A7!important}.category-quick-nav > button:nth-child(6){background:#FBC78E!important}.category-quick-nav > button:nth-child(7){background:#F6B56F!important}
+        .category-quick-nav > button:nth-child(-n+7),.category-quick-nav > button:nth-child(-n+7) i{color:#8A470F!important}
+        #tables-container > div > div:first-child{background:linear-gradient(90deg,#FFF7EF 0%,#FFEBD8 100%)!important}
+        #frontend-mobile-bar{background:rgba(255,239,222,.97)!important;border-color:#F1C99F!important;box-shadow:0 -8px 24px rgba(138,59,8,.10)!important}
+        #backend-output .backend-code,#backend-output [data-code],#backend-output button,#backend-output span[onclick]{background-color:#FFE8D2!important;border-color:#F3C79E!important;color:#8A470F!important}
+        #backend-output .backend-code.code-selected,#backend-output [data-code].code-selected,#backend-output button.code-selected,#backend-output span[onclick].code-selected{background-color:#F7B979!important;border-color:#E89443!important;color:#6F3107!important}
+
+        /* Backend orange theme */
+        #backend-login > div { background:#FFF9F3 !important; border-color:#F3D4B8 !important; box-shadow:0 12px 34px rgba(198,90,10,.10) !important; }
+        #backend-login .bg-slate-800 { background:#E36A0A !important; }
+        #backend-login button.bg-slate-800 { background:#E36A0A !important; box-shadow:0 10px 24px rgba(227,106,10,.20) !important; }
+        #backend-login button.bg-slate-800:hover { background:#C65A0A !important; }
+        #backend-login button.bg-slate-800:active { background:#A94A0A !important; }
+        #backend-login h2, #backend-login label { color:#8A470F !important; }
+        #backend-login p { color:#9A7257 !important; }
+        #backend-password { background:#FFFDF9 !important; border-color:#F3C79E !important; }
+        #backend-password:focus { border-color:#F59A4A !important; --tw-ring-color:rgba(240,122,22,.25) !important; }
+
+        /* Backend product-code hover: orange */
+        #backend-output .backend-code:hover,
+        #backend-output [data-code]:hover,
+        #backend-output button:hover,
+        #backend-output span[onclick]:hover { background-color:#FFD6AD !important; border-color:#F0A35A !important; color:#7A3609 !important; }
+
+        /* Success toast: light orange */
+        #toast.backend-copy-success { background:#FFF0E1 !important; border-color:#F3C79E !important; box-shadow:0 12px 30px rgba(198,90,10,.14) !important; }
+        #toast.backend-copy-success #toast-msg, #toast.backend-copy-success #toast-icon { color:#C65A0A !important; }
+
+
+        /* 訂購明細：內容文字放大一號 */
+        #summary-box {
+            font-size: 0.875rem !important;
+            line-height: 1.7 !important;
+        }
+        @media (min-width: 640px) {
+            #summary-box {
+                font-size: 1rem !important;
+            }
+        }
+        #summary-box * {
+            font-size: inherit !important;
+            line-height: inherit !important;
+        }
+
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen pb-28 sm:pb-16 text-slate-800">
+
+    <!-- Decorative falling noodle bowls -->
+    <div id="bowl-rain" class="bowl-rain" aria-hidden="true"></div>
+
+    <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#FFFDF9] flex items-center justify-center overflow-hidden shadow-md border-2 border-[#E7D5C8]">
+                    <img src="suosuoluo-logo.png" alt="唆唆螺" class="w-full h-full object-cover">
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-xl font-extrabold text-slate-900 tracking-tight leading-tight">唆唆螺｜訂貨計算器</h1>
+                    <p class="text-[10px] sm:text-xs text-slate-500 hidden sm:block">快速選取品項數量與複製訂購明細</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Responsive Flex-Wrap Category Quick Pills -->
+        <div class="border-t border-slate-100 bg-slate-50/80 px-3 py-2.5">
+            <div class="category-quick-nav flex flex-wrap items-center gap-1.5 sm:gap-2 max-w-4xl mx-auto">
+                <button onclick="scrollToCategory('luosifen')" class="touch-btn px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold bg-amber-100/80 text-amber-900 border border-amber-200/80 hover:bg-amber-200 active:scale-95 transition-all flex items-center space-x-1.5">
+                    <i class="fa-solid fa-bowl-food text-amber-700 text-xs"></i>
+                    <span>乾貨區</span>
+                </button>
+                <button onclick="scrollToCategory('jintang')" class="touch-btn px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold bg-orange-100/80 text-orange-900 border border-orange-200/80 hover:bg-orange-200 active:scale-95 transition-all flex items-center space-x-1.5">
+                    <i class="fa-solid fa-pepper-hot text-orange-700 text-xs"></i>
+                    <span>金湯醬料區</span>
+                </button>
+                <button onclick="scrollToCategory('guozhi')" class="touch-btn px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold bg-emerald-100/80 text-emerald-900 border border-emerald-200/80 hover:bg-emerald-200 active:scale-95 transition-all flex items-center space-x-1.5">
+                    <i class="fa-solid fa-wine-bottle text-emerald-700 text-xs"></i>
+                    <span>飲料區</span>
+                </button>
+                <button onclick="scrollToCategory('canju')" class="touch-btn px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold bg-purple-100/80 text-purple-900 border border-purple-200/80 hover:bg-purple-200 active:scale-95 transition-all flex items-center space-x-1.5">
+                    <i class="fa-solid fa-box-open text-purple-700 text-xs"></i>
+                    <span>消耗品區</span>
+                </button>
+                <button onclick="scrollToCategory('lengdong')" class="touch-btn px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold bg-cyan-100/80 text-cyan-900 border border-cyan-200/80 hover:bg-cyan-200 active:scale-95 transition-all flex items-center space-x-1.5">
+                    <i class="fa-solid fa-snowflake text-cyan-700 text-xs"></i>
+                    <span>冷凍區</span>
+                </button>
+                <button onclick="scrollToCategory('summary-section')" class="touch-btn px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold bg-orange-600 text-white shadow-xs hover:bg-orange-700 active:scale-95 transition-all flex items-center space-x-1">
+                    <i class="fa-solid fa-clipboard-list text-[10px]"></i>
+                    <span>訂購明細</span>
+                </button>
+                <button onclick="openBackend()" class="touch-btn px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold bg-slate-800 text-white shadow-xs hover:bg-slate-900 active:scale-95 transition-all flex items-center space-x-1">
+                    <i class="fa-solid fa-lock text-[10px]"></i>
+                    <span>後台</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main id="frontend-page" class="max-w-4xl mx-auto px-3 sm:px-6 pt-4 pb-6">
+
+        <!-- Dynamic Category Containers -->
+        <div id="tables-container" class="space-y-4 sm:space-y-6">
+            <!-- Dynamic category cards generated via JS -->
+        </div>
+
+        <!-- Detail Summary Box Section -->
+        <div id="summary-section" class="mt-6 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 sm:p-6 scroll-target">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-bold text-slate-800 flex items-center space-x-2 text-base">
+                    <i class="fa-solid fa-clipboard-list text-orange-600"></i>
+                    <span>訂購明細</span>
+                </h3>
+                <span id="item-count-badge" class="text-xs font-bold bg-orange-50 text-orange-700 px-3 py-1 rounded-full border border-orange-100">
+                    已選 0 項商品
+                </span>
+            </div>
+
+            <!-- Output Display Box -->
+            <div id="summary-box" class="bg-slate-50 rounded-xl p-3.5 sm:p-4 border border-slate-200 text-xs sm:text-sm text-slate-800 font-mono whitespace-pre-wrap min-h-[120px] leading-relaxed select-all overflow-x-auto">
+                <span class="text-slate-400 italic font-sans">尚未選擇任何商品項目...</span>
+            </div>
+
+            <!-- Copy and Reset Actions -->
+            <div class="mt-4 flex flex-col sm:flex-row items-center gap-2.5">
+                <button id="copy-btn" onclick="copySummary()" class="touch-btn w-full sm:w-auto flex-1 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-md shadow-orange-200 transition-all flex items-center justify-center space-x-2">
+                    <i class="fa-regular fa-copy text-base"></i>
+                    <span>複製訂購明細文字</span>
+                </button>
+                <button onclick="resetAll()" class="touch-btn w-full sm:w-auto bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-600 font-bold py-3.5 px-5 rounded-xl transition-all flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-rotate-left text-xs"></i>
+                    <span>清空重填</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Backend Page -->
+    <main id="backend-page" class="hidden max-w-4xl mx-auto px-3 sm:px-6 pt-4 pb-16">
+        <!-- Backend Login -->
+        <div id="backend-login" class="min-h-[calc(100vh-120px)] flex items-start sm:items-center justify-center py-2 sm:py-8">
+            <div class="w-full max-w-[560px] bg-white rounded-[22px] sm:rounded-[24px] shadow-sm border border-slate-200/80 px-5 sm:px-9 py-8 sm:py-10">
+                <div class="text-center">
+                    <div class="mx-auto w-[72px] h-[72px] sm:w-[72px] sm:h-[72px] rounded-[20px] bg-slate-800 text-white flex items-center justify-center shadow-lg shadow-slate-300/50">
+                        <i class="fa-solid fa-lock text-[27px]"></i>
+                    </div>
+                    <h2 class="mt-5 text-[30px] sm:text-[32px] leading-none font-extrabold tracking-tight text-slate-900">後台管理</h2>
+                    <p class="mt-4 text-base sm:text-[17px] text-slate-500">請輸入密碼才能使用後台功能</p>
+                </div>
+
+                <div class="mt-8 sm:mt-9">
+                    <label for="backend-password" class="block text-base sm:text-[17px] font-extrabold text-slate-700 mb-2.5">後台密碼</label>
+                    <input id="backend-password" type="password" inputmode="numeric" autocomplete="off"
+                        placeholder="請輸入密碼"
+                        class="w-full h-[68px] sm:h-[66px] rounded-[17px] border border-slate-300 bg-slate-50 px-5 text-lg sm:text-[18px] text-slate-800 font-mono tracking-wider placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-400"
+                        onkeydown="if(event.key==='Enter') verifyBackendPassword()">
+
+                    <button onclick="verifyBackendPassword()" class="touch-btn mt-4 w-full h-[66px] rounded-[17px] bg-slate-800 hover:bg-slate-900 active:bg-slate-950 text-white font-extrabold text-lg sm:text-[20px] shadow-lg shadow-slate-300/50 transition-all flex items-center justify-center">
+                        <i class="fa-solid fa-right-to-bracket mr-2"></i>登入後台
+                    </button>
+                    <p id="backend-login-msg" class="hidden mt-3 text-sm font-bold text-red-600 text-center">密碼錯誤，請重新輸入。</p>
+                </div>
+
+                <button onclick="backToFrontend()" class="touch-btn mt-5 w-full text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">
+                    <i class="fa-solid fa-arrow-left mr-1"></i>返回訂貨計算器
+                </button>
+            </div>
+        </div>
+
+        <div id="backend-content" class="hidden">
+                <div class="grid grid-cols-1 gap-5">
+                    <div>
+                        <div class="flex items-start justify-between mb-2">
+                            <div>
+                                <label for="backend-input" class="text-sm font-extrabold text-slate-800">① 訂購明細</label>
+                                <p class="mt-1 text-xs sm:text-sm text-slate-400">貼上訂購明細可轉換成品號</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="clearBackend()" class="touch-btn text-xs font-bold text-slate-500 hover:text-slate-800 px-2 py-1 rounded-lg hover:bg-slate-100">
+                                    <i class="fa-solid fa-rotate-left mr-1"></i>清空
+                                </button>
+                                <button onclick="pasteBackendInput()" class="touch-btn px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold">
+                                    <i class="fa-solid fa-paste mr-1"></i>貼上
+                                </button>
+                            </div>
+                        </div>
+                        <textarea id="backend-input" oninput="convertBackendText()"
+                            class="w-full min-h-[230px] sm:min-h-[280px] rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm sm:text-base text-slate-800 font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-400 resize-y"
+                            placeholder="請將前台複製的訂購明細貼在這裡(*´∀`*)"></textarea>
+                    </div>
+
+                    <div>
+                        <div class="flex items-start justify-between mb-2">
+                            <div>
+                                <label for="backend-output" class="text-sm font-extrabold text-slate-800">② 轉換後品號</label>
+                                <p class="mt-1 text-xs sm:text-sm text-slate-400">點一下品號可以直接複製</p>
+                            </div>
+                            <button onclick="copyBackendOutput()" class="touch-btn px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold">
+                                <i class="fa-regular fa-copy mr-1"></i>複製
+                            </button>
+                        </div>
+                        <div id="backend-output" aria-label="轉換後品號"
+                            class="w-full min-h-[230px] sm:min-h-[280px] rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm sm:text-base text-slate-800 font-mono leading-relaxed whitespace-pre-wrap overflow-auto select-text"
+                            title="點一下品號即可複製"></div>
+                    </div>
+                </div>
+
+                <div class="mt-5 rounded-xl bg-slate-50 border border-slate-200 p-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-list-check text-slate-600"></i>
+                        <h3 class="text-sm font-extrabold text-slate-800">目前品號對照</h3>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm font-mono">
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">米粉20公斤 → LZH02005</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">原汁5公斤(一組2入) → LZH09009</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">酸筍2.5公斤(一組3入) → LZH09004</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">酸豆2.5公斤(一組3入) → LZH09005</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">腐竹5公斤 → LZH09006</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">老母雞1公斤 → GOL01001</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">花椒麻1公斤 → GOL01002</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">濃酸菜1公斤 → GOL01003</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">不辣老母雞1公斤 → GOL01004</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2"></div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2"></div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2"></div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">荔枝濃縮2.5公斤 → DRI02002</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">蘋果濃縮2.5公斤 → DRI02001</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">水蜜桃濃縮2.5公斤 → DRI02003</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">1300cc唆唆螺碗蓋組600入 → DIS15002</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">筷子 → DIS03001</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">湯匙 → DIS04001</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">半斤袋10包 → DIS05001</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">兩斤袋10包 → DIS06001</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">耐熱袋 7*10 → DIS07002</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">綁提圈 → DIS08001</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">500ml圓瓶+蓋子200入 → PLA03002</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">500ml方瓶+蓋子200入 → PLA03003</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">黑糖珍珠360包 → DRI01001</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">櫻花晶球12KG → DRI01002</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2"></div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2"></div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">豬肉 → FRE01001</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">牛肉 → FRE01002</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">蟹味棒 → FRE01004</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">小貢丸 → FRE01005</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">魚板 → FRE01006</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">香Q腸 → FRE01007</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">蝦球 → FRE01010</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">黃金魚丸 → FRE01011</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">牛五花 → FRE01008</div>
+                        <div class="bg-white rounded-lg border border-slate-200 px-3 py-2">豬五花 → FRE01009</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Mobile Fixed Bottom Action Bar -->
+    <div id="frontend-mobile-bar" class="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-orange-50/95 backdrop-blur-md text-slate-800 border-t border-orange-200/80 px-4 py-2.5 shadow-2xl flex items-center justify-between">
+        <div>
+            <span id="mobile-item-count" class="text-[10px] text-slate-500 block font-bold">已選擇 0 項品項</span>
+        </div>
+        <button onclick="scrollToCategory('summary-section')" class="touch-btn bg-orange-600 active:bg-orange-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md flex items-center space-x-1.5">
+            <i class="fa-solid fa-clipboard-list text-xs"></i>
+            <span>查看明細</span>
+        </button>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-orange-50 border border-orange-200 px-6 py-4 rounded-2xl shadow-xl shadow-rose-950/10 flex items-center space-x-3.5 transition-all duration-300 transform scale-90 opacity-0 pointer-events-none z-50 min-w-[240px] max-w-[90vw] justify-center">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-orange-700 text-xl"></i>
+        <span id="toast-msg" class="text-sm sm:text-base font-bold text-orange-700">已成功複製訂購明細！</span>
+    </div>
+
+    <script>
+        /* Decorative noodle-bowl rain. Bowls fall slowly and disappear after leaving the viewport. */
+        (function initNoodleBowlRain() {
+            const layer = document.getElementById('bowl-rain');
+            if (!layer || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+            const tones = ['#A94A0A', '#C65A0A', '#E36A0A', '#F07A16', '#F59A4A'];
+
+            function makeBowl(size, tone, opacity) {
+                const el = document.createElement('span');
+                el.className = 'noodle-bowl';
+                el.style.setProperty('--size', size + 'px');
+                el.style.setProperty('--tone', tone);
+                el.style.setProperty('--opacity', opacity);
+                el.innerHTML = '<span class="noodle n1"></span><span class="noodle n2"></span><span class="noodle n3"></span><span class="chopstick"></span><span class="chopstick2"></span><span class="rim"></span><span class="bowl-body"></span>';
+                return el;
+            }
+
+            function spawnNoodleBowl() {
+                const mobile = window.innerWidth <= 640;
+                const size = mobile ? 20 + Math.random() * 12 : 22 + Math.random() * 16;
+                const x = Math.max(4, Math.random() * (window.innerWidth - size - 8));
+                const drift = (Math.random() - .5) * (mobile ? 34 : 68);
+                const duration = (mobile ? 14500 : 16500) + Math.random() * 5500;
+                const tone = tones[Math.floor(Math.random() * tones.length)];
+                const opacity = mobile ? (.078 + Math.random() * .042) : (.066 + Math.random() * .048);
+                const startRotate = -14 + Math.random() * 28;
+                const endRotate = startRotate + (-20 + Math.random() * 40);
+                const bowl = makeBowl(size, tone, opacity.toFixed(3));
+                bowl.style.left = x + 'px';
+                bowl.style.top = (-size - 12) + 'px';
+                layer.appendChild(bowl);
+
+                const travelY = window.innerHeight + size + 28;
+                const animation = bowl.animate([
+                    { transform: `translate3d(0,0,0) rotate(${startRotate}deg)` },
+                    { transform: `translate3d(${drift * .65}px,${travelY * .55}px,0) rotate(${startRotate + 7}deg)`, offset: .55 },
+                    { transform: `translate3d(${drift}px,${travelY}px,0) rotate(${endRotate}deg)` }
+                ], {
+                    duration,
+                    easing: 'linear',
+                    fill: 'forwards'
+                });
+
+                animation.onfinish = () => bowl.remove();
+            }
+
+            // Start gently, then keep the background movement sparse and slow.
+            const initialCount = window.innerWidth <= 640 ? 3 : 5;
+            for (let i = 0; i < initialCount; i++) {
+                window.setTimeout(spawnNoodleBowl, 500 + i * 1400);
+            }
+            window.setInterval(spawnNoodleBowl, window.innerWidth <= 640 ? 6200 : 5000);
+        })();
+
+        /* Product Category Data Definition */
+        const initialCategories = [
+            {
+                id: "luosifen",
+                name: "乾貨區",
+                icon: "fa-bowl-food",
+                badgeBg: "bg-amber-100 text-amber-800 border-amber-200",
+                items: [
+                    { id: "l1", name: "米粉20公斤", unit: "箱", quantity: 0 },
+                    { id: "l6", name: "原汁5公斤(一組2入)", unit: "瓶", quantity: 0 },
+                    { id: "l3", name: "酸筍2.5公斤(一組3入)", unit: "包", quantity: 0 },
+                    { id: "l4", name: "酸豆2.5公斤(一組3入)", unit: "包", quantity: 0 },
+                    { id: "l5", name: "腐竹5公斤", unit: "包", quantity: 0 }
+                ]
+            },
+            {
+                id: "jintang",
+                name: "金湯醬料區",
+                icon: "fa-pepper-hot",
+                badgeBg: "bg-orange-100 text-orange-800 border-orange-200",
+                items: [
+                    { id: "j1", name: "老母雞1公斤", unit: "包", quantity: 0 },
+                    { id: "j2", name: "花椒麻1公斤", unit: "包", quantity: 0 },
+                    { id: "j3", name: "濃酸菜1公斤", unit: "包", quantity: 0 },
+                    { id: "j4", name: "不辣老母雞1公斤", unit: "包", quantity: 0 }
+                ]
+            },
+            {
+                id: "guozhi",
+                name: "飲料區",
+                icon: "fa-wine-bottle",
+                badgeBg: "bg-emerald-100 text-emerald-800 border-emerald-200",
+                items: [
+                    { id: "gz1", name: "荔枝濃縮2.5公斤", unit: "瓶", quantity: 0 },
+                    { id: "gz2", name: "蘋果濃縮2.5公斤", unit: "瓶", quantity: 0 },
+                    { id: "gz3", name: "水蜜桃濃縮2.5公斤", unit: "瓶", quantity: 0 },
+                    { id: "gz4", name: "黑糖珍珠360包", unit: "箱", quantity: 0 },
+                    { id: "gz5", name: "櫻花晶球12KG", unit: "箱", quantity: 0 },
+                    { id: "c18", name: "500ml圓瓶+蓋子200入", unit: "瓶", quantity: 0 },
+                    { id: "c19", name: "500ml方瓶+蓋子200入", unit: "瓶", quantity: 0 }
+                ]
+            },
+            {
+                id: "canju",
+                name: "消耗品區",
+                icon: "fa-box-open",
+                badgeBg: "bg-purple-100 text-purple-800 border-purple-200",
+                items: [
+                    { id: "c1", name: "1300cc唆唆螺碗蓋組600入", unit: "組", quantity: 0 },
+                    { id: "c9", name: "筷子", unit: "包", quantity: 0 },
+                    { id: "c10", name: "湯匙", unit: "包", quantity: 0 },
+                    { id: "c11", name: "半斤袋10包", unit: "組", quantity: 0 },
+                    { id: "c12", name: "兩斤袋10包", unit: "組", quantity: 0 },
+                    { id: "c13", name: "耐熱袋 7*10", unit: "包", quantity: 0 },
+                    { id: "c14", name: "綁提圈", unit: "包", quantity: 0 }
+                ]
+            },
+            {
+                id: "lengdong",
+                name: "冷凍區",
+                icon: "fa-snowflake",
+                badgeBg: "bg-cyan-100 text-cyan-800 border-cyan-200",
+                hasDivider: true,
+                items: [
+                    { id: "ld1", name: "豬肉", unit: "包", quantity: 0 },
+                    { id: "ld2", name: "牛肉", unit: "包", quantity: 0 },
+                    { id: "ld3", name: "蟹味棒", unit: "包", quantity: 0 },
+                    { id: "ld4", name: "小貢丸", unit: "包", quantity: 0 },
+                    { id: "ld5", name: "魚板", unit: "包", quantity: 0 },
+                    { id: "ld6", name: "香Q腸", unit: "包", quantity: 0 },
+                    { id: "ld7", name: "蝦球", unit: "包", quantity: 0 },
+                    { id: "ld8", name: "黃金魚丸", unit: "包", quantity: 0 },
+                    { id: "ld9", name: "牛五花", unit: "包", quantity: 0 },
+                    { id: "ld10", name: "豬五花", unit: "包", quantity: 0 }
+                ]
+            }
+        ];
+
+        // Deep clone state & sticker state
+        let categoriesData = JSON.parse(JSON.stringify(initialCategories));
+        let stickerData = {
+            lychee: 0,
+            apple: 0,
+            lycheeApple: 0,
+            peach: 0
+        };
+        let squareStickerData = {
+            lychee: 0,
+            apple: 0,
+            lycheeApple: 0,
+            peach: 0
+        };
+
+        function getMaxStickers(bottleId = 'c18') {
+            const drinkCat = categoriesData.find(c => c.id === 'guozhi');
+            if (!drinkCat) return 0;
+            const bottleItem = drinkCat.items.find(i => i.id === bottleId);
+            return bottleItem ? Math.floor(bottleItem.quantity / 200) * 5 : 0;
+        }
+
+        function updateSticker(type, change) {
+            const maxStickers = getMaxStickers();
+            const currentTotal = stickerData.lychee + stickerData.apple + stickerData.lycheeApple + stickerData.peach;
+
+            if (change > 0 && currentTotal >= maxStickers) {
+                showToast(`貼紙總數已達上限 (${maxStickers}張)`, 'fa-circle-exclamation', 'text-amber-600');
+                return;
+            }
+
+            const newVal = stickerData[type] + change;
+            if (newVal >= 0) {
+                stickerData[type] = newVal;
+                render();
+            }
+        }
+
+        function setSticker(type, value) {
+            const val = parseInt(value, 10);
+            const qty = isNaN(val) || val < 0 ? 0 : val;
+
+            const maxStickers = getMaxStickers();
+            const otherTotal = Object.keys(stickerData).reduce((sum, key) => key === type ? sum : sum + stickerData[key], 0);
+
+            if (otherTotal + qty > maxStickers) {
+                stickerData[type] = Math.max(0, maxStickers - otherTotal);
+                showToast(`貼紙總數已自動調整至上限 (${maxStickers}張)`, 'fa-circle-exclamation', 'text-amber-600');
+            } else {
+                stickerData[type] = qty;
+            }
+            render();
+        }
+
+        function updateSquareSticker(type, change) {
+            const maxStickers = getMaxStickers('c19');
+            const currentTotal = squareStickerData.lychee + squareStickerData.apple + squareStickerData.lycheeApple + squareStickerData.peach;
+            if (change > 0 && currentTotal >= maxStickers) {
+                showToast(`方瓶貼紙總數已達上限 (${maxStickers}張)`, 'fa-circle-exclamation', 'text-amber-600');
+                return;
+            }
+            const newVal = squareStickerData[type] + change;
+            if (newVal >= 0) { squareStickerData[type] = newVal; render(); }
+        }
+
+        function setSquareSticker(type, value) {
+            const val = parseInt(value, 10);
+            const qty = isNaN(val) || val < 0 ? 0 : val;
+            const maxStickers = getMaxStickers('c19');
+            const otherTotal = Object.keys(squareStickerData).reduce((sum, key) => key === type ? sum : sum + squareStickerData[key], 0);
+            if (otherTotal + qty > maxStickers) {
+                squareStickerData[type] = Math.max(0, maxStickers - otherTotal);
+                showToast(`方瓶貼紙總數已自動調整至上限 (${maxStickers}張)`, 'fa-circle-exclamation', 'text-amber-600');
+            } else { squareStickerData[type] = qty; }
+            render();
+        }
+
+        function render() {
+            const container = document.getElementById('tables-container');
+            let totalSelectedTypes = 0;
+            let summaryBlocks = [];
+            let htmlContent = '';
+
+            categoriesData.forEach(cat => {
+                let catMobileCardsHtml = '';
+                let catDesktopTableRowsHtml = '';
+                let catSelectedLines = [];
+
+                cat.items.forEach(item => {
+                    if (item.quantity > 0) {
+                        totalSelectedTypes++;
+                        catSelectedLines.push(`• ${item.name} x ${item.quantity}${item.unit}`);
+                    }
+
+                    // Bottle rows are rendered together with their sticker selectors below.
+                    if (cat.id === 'guozhi' && (item.id === 'c18' || item.id === 'c19')) return;
+
+                    const minusDisabled = item.quantity <= 0 ? 'disabled' : '';
+
+                    catMobileCardsHtml += `
+                        <div class="px-3.5 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50/50 transition-colors">
+                            <div class="flex items-center justify-between gap-3">
+                                <div class="min-w-0 flex-1">
+                                    <h4 class="text-sm font-bold text-slate-800 leading-snug">${item.name}</h4>
+                                    <span class="mt-0.5 block text-xs text-slate-500 font-medium">單位：${item.unit}</span>
+                                </div>
+                                <div class="shrink-0">
+                                    <div class="inline-flex items-center space-x-1.5 bg-slate-100 rounded-xl p-1 border border-slate-200">
+                                        <button type="button" onclick="updateQuantity('${cat.id}', '${item.id}', -1)" ${minusDisabled} class="touch-btn w-8 h-8 rounded-lg bg-white text-slate-800 shadow-xs active:bg-slate-200 flex items-center justify-center text-xs font-bold transition-all disabled:opacity-25 disabled:active:bg-white"><i class="fa-solid fa-minus"></i></button>
+                                        <input type="number" min="0" value="${item.quantity}" onchange="setQuantity('${cat.id}', '${item.id}', this.value)" class="w-11 text-center bg-transparent text-sm font-extrabold text-slate-800 focus:outline-none font-mono">
+                                        <button type="button" onclick="updateQuantity('${cat.id}', '${item.id}', 1)" class="touch-btn w-8 h-8 rounded-lg bg-orange-600 text-white shadow-xs active:bg-orange-700 flex items-center justify-center text-xs font-bold transition-all"><i class="fa-solid fa-plus"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+
+                    catDesktopTableRowsHtml += `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
+                            <td class="px-4 py-3 text-sm font-medium text-slate-800">${item.name}</td>
+                            <td class="px-3 py-3 text-center">
+                                <div class="inline-flex items-center space-x-1 bg-slate-100 rounded-lg p-1 border border-slate-200">
+                                    <button type="button" onclick="updateQuantity('${cat.id}', '${item.id}', -1)" ${minusDisabled} class="touch-btn w-7 h-7 rounded-md bg-white text-slate-700 shadow-xs hover:bg-slate-200 active:scale-95 flex items-center justify-center text-xs font-bold transition-all disabled:opacity-30"><i class="fa-solid fa-minus"></i></button>
+                                    <input type="number" min="0" value="${item.quantity}" onchange="setQuantity('${cat.id}', '${item.id}', this.value)" class="w-12 text-center bg-transparent text-sm font-bold text-slate-800 focus:outline-none font-mono">
+                                    <button type="button" onclick="updateQuantity('${cat.id}', '${item.id}', 1)" class="touch-btn w-7 h-7 rounded-md bg-orange-600 text-white shadow-xs hover:bg-orange-700 active:scale-95 flex items-center justify-center text-xs font-bold transition-all"><i class="fa-solid fa-plus"></i></button>
+                                </div>
+                            </td>
+                            <td class="px-3 py-3 text-sm text-slate-600 font-medium">${item.unit}</td>
+                        </tr>`;
+                });
+
+                if (cat.id === 'guozhi') {
+                    const selectedStickers = [];
+                    if (stickerData.lychee > 0) selectedStickers.push(`荔枝 x ${stickerData.lychee}張`);
+                    if (stickerData.apple > 0) selectedStickers.push(`蘋果 x ${stickerData.apple}張`);
+                    if (stickerData.lycheeApple > 0) selectedStickers.push(`荔枝蘋果 x ${stickerData.lycheeApple}張`);
+                    if (stickerData.peach > 0) selectedStickers.push(`水蜜桃 x ${stickerData.peach}張`);
+                    if (selectedStickers.length > 0) catSelectedLines.push(`• 圓瓶贈送貼紙(一張21次)：${selectedStickers.join('、')}`);
+                    const squareSelectedStickers = [];
+                    if (squareStickerData.lychee > 0) squareSelectedStickers.push(`荔枝 x ${squareStickerData.lychee}張`);
+                    if (squareStickerData.apple > 0) squareSelectedStickers.push(`蘋果 x ${squareStickerData.apple}張`);
+                    if (squareStickerData.lycheeApple > 0) squareSelectedStickers.push(`荔枝蘋果 x ${squareStickerData.lycheeApple}張`);
+                    if (squareStickerData.peach > 0) squareSelectedStickers.push(`水蜜桃 x ${squareStickerData.peach}張`);
+                    if (squareSelectedStickers.length > 0) catSelectedLines.push(`• 方瓶贈送貼紙(一張21次)：${squareSelectedStickers.join('、')}`);
+                }
+
+                if (catSelectedLines.length > 0) {
+                    let blockText = `【${cat.name}】\n` + catSelectedLines.join('\n');
+                    if (cat.hasDivider && summaryBlocks.length > 0) blockText = `--------------------\n` + blockText;
+                    summaryBlocks.push(blockText);
+                }
+
+                let stickerBlockHtml = '';
+                if (cat.id === 'guozhi') {
+                    const maxStickers = getMaxStickers();
+                    const totalStickers = stickerData.lychee + stickerData.apple + stickerData.lycheeApple + stickerData.peach;
+                    const stickerRow = (type, label) => `
+                        <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-orange-200/80 shadow-2xs">
+                            <span class="text-xs font-bold text-slate-700">${label}</span>
+                            <div class="inline-flex items-center space-x-1 bg-slate-100 rounded-lg p-0.5 border border-slate-200">
+                                <button type="button" onclick="updateSticker('${type}', -1)" ${stickerData[type] <= 0 ? 'disabled' : ''} class="touch-btn w-7 h-7 rounded-md bg-white text-slate-800 shadow-xs flex items-center justify-center text-xs font-bold disabled:opacity-25"><i class="fa-solid fa-minus"></i></button>
+                                <input type="number" min="0" value="${stickerData[type]}" onchange="setSticker('${type}', this.value)" class="w-10 text-center bg-transparent text-xs font-extrabold text-slate-800 focus:outline-none font-mono">
+                                <button type="button" onclick="updateSticker('${type}', 1)" class="touch-btn w-7 h-7 rounded-md bg-orange-600 text-white shadow-xs flex items-center justify-center text-xs font-bold"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                        </div>`;
+                    const squareMaxStickers = getMaxStickers('c19');
+                    const squareTotalStickers = squareStickerData.lychee + squareStickerData.apple + squareStickerData.lycheeApple + squareStickerData.peach;
+                    const squareStickerRow = (type, label) => `
+                        <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-orange-200/80 shadow-2xs">
+                            <span class="text-xs font-bold text-slate-700">${label}</span>
+                            <div class="inline-flex items-center space-x-1 bg-slate-100 rounded-lg p-0.5 border border-slate-200">
+                                <button type="button" onclick="updateSquareSticker('${type}', -1)" ${squareStickerData[type] <= 0 ? 'disabled' : ''} class="touch-btn w-7 h-7 rounded-md bg-white text-slate-800 shadow-xs flex items-center justify-center text-xs font-bold disabled:opacity-25"><i class="fa-solid fa-minus"></i></button>
+                                <input type="number" min="0" value="${squareStickerData[type]}" onchange="setSquareSticker('${type}', this.value)" class="w-10 text-center bg-transparent text-xs font-extrabold text-slate-800 focus:outline-none font-mono">
+                                <button type="button" onclick="updateSquareSticker('${type}', 1)" class="touch-btn w-7 h-7 rounded-md bg-orange-600 text-white shadow-xs flex items-center justify-center text-xs font-bold"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                        </div>`;
+                    const bottleRow = (id, name) => {
+                        const item = cat.items.find(i => i.id === id);
+                        const disabled = item.quantity <= 0 ? 'disabled' : '';
+                        return `
+                        <div class="block sm:hidden px-3.5 py-3 border-t border-orange-100 bg-white">
+                            <div class="flex items-center justify-between gap-3">
+                                <div class="min-w-0 flex-1">
+                                    <h4 class="text-sm font-bold text-slate-800 leading-snug">${name}</h4>
+                                    <span class="mt-0.5 block text-xs text-slate-500 font-medium">單位：組</span>
+                                </div>
+                                <div class="shrink-0">
+                                    <div class="inline-flex items-center space-x-1.5 bg-slate-100 rounded-xl p-1 border border-slate-200">
+                                        <button type="button" onclick="updateQuantity('guozhi','${id}',-1)" ${disabled} class="touch-btn w-8 h-8 rounded-lg bg-white text-slate-800 shadow-xs active:bg-slate-200 flex items-center justify-center text-xs font-bold transition-all disabled:opacity-25 disabled:active:bg-white"><i class="fa-solid fa-minus"></i></button>
+                                        <input type="number" min="0" value="${item.quantity}" onchange="setQuantity('guozhi','${id}',this.value)" class="w-11 text-center bg-transparent text-sm font-extrabold text-slate-800 focus:outline-none font-mono">
+                                        <button type="button" onclick="updateQuantity('guozhi','${id}',1)" class="touch-btn w-8 h-8 rounded-lg bg-orange-600 text-white shadow-xs active:bg-orange-700 flex items-center justify-center text-xs font-bold transition-all"><i class="fa-solid fa-plus"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hidden sm:block border-t border-orange-100 bg-white overflow-x-auto">
+                            <table class="w-full text-left border-collapse table-fixed">
+                                <colgroup>
+                                    <col>
+                                    <col style="width:12rem">
+                                    <col style="width:5rem">
+                                </colgroup>
+                                <tbody>
+                                    <tr class="hover:bg-slate-50/80 transition-colors">
+                                        <td class="px-4 py-3 text-sm font-medium text-slate-800">${name}</td>
+                                        <td class="px-3 py-3 text-center">
+                                            <div class="inline-flex items-center space-x-1 bg-slate-100 rounded-lg p-1 border border-slate-200">
+                                                <button type="button" onclick="updateQuantity('guozhi','${id}',-1)" ${disabled} class="touch-btn w-7 h-7 rounded-md bg-white text-slate-700 shadow-xs hover:bg-slate-200 active:scale-95 flex items-center justify-center text-xs font-bold transition-all disabled:opacity-30"><i class="fa-solid fa-minus"></i></button>
+                                                <input type="number" min="0" value="${item.quantity}" onchange="setQuantity('guozhi','${id}',this.value)" class="w-12 text-center bg-transparent text-sm font-bold text-slate-800 focus:outline-none font-mono">
+                                                <button type="button" onclick="updateQuantity('guozhi','${id}',1)" class="touch-btn w-7 h-7 rounded-md bg-orange-600 text-white shadow-xs hover:bg-orange-700 active:scale-95 flex items-center justify-center text-xs font-bold transition-all"><i class="fa-solid fa-plus"></i></button>
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-3 text-sm text-slate-600 font-medium">組</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>`;
+                    };
+                    stickerBlockHtml = `
+                        ${bottleRow('c18','500ml圓瓶+蓋子200入')}
+                        <div class="p-3 sm:p-4 bg-orange-50/70 border-t border-orange-100">
+                            <div class="flex items-center justify-between mb-2.5"><span class="text-xs sm:text-sm font-extrabold text-orange-800">圓瓶｜贈送貼紙(一張21入)</span><span class="text-[11px] font-bold text-orange-700">已選 ${totalStickers} / ${maxStickers} 張</span></div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${stickerRow('lychee','荔枝')}${stickerRow('apple','蘋果')}${stickerRow('lycheeApple','荔枝蘋果')}${stickerRow('peach','水蜜桃')}</div>
+                            <p class="mt-2 text-[11px] sm:text-xs text-orange-700 font-medium">未選擇貼紙則隨機出貨</p>
+                        </div>
+                        ${bottleRow('c19','500ml方瓶+蓋子200入')}
+                        <div class="p-3 sm:p-4 bg-orange-50/70 border-t border-orange-100 rounded-b-2xl">
+                            <div class="flex items-center justify-between mb-2.5"><span class="text-xs sm:text-sm font-extrabold text-orange-800">方瓶｜贈送貼紙(一張21入)</span><span class="text-[11px] font-bold text-orange-700">已選 ${squareTotalStickers} / ${squareMaxStickers} 張</span></div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${squareStickerRow('lychee','荔枝')}${squareStickerRow('apple','蘋果')}${squareStickerRow('lycheeApple','荔枝蘋果')}${squareStickerRow('peach','水蜜桃')}</div>
+                            <p class="mt-2 text-[11px] sm:text-xs text-orange-700 font-medium">未選擇貼紙則隨機出貨</p>
+                        </div>`
+                }
+
+                htmlContent += `
+                    <div id="${cat.id}" class="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden scroll-target">
+                        <div class="px-4 py-3.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                            <div class="flex items-center space-x-2.5"><div class="w-8 h-8 rounded-xl ${cat.badgeBg} flex items-center justify-center text-xs border shadow-2xs"><i class="fa-solid ${cat.icon}"></i></div><h2 class="font-bold text-slate-800 text-base sm:text-lg">${cat.name}</h2></div>
+                            <span class="text-xs text-slate-400 font-medium bg-white px-2.5 py-1 rounded-full border border-slate-200/60">${cat.items.length} 項</span>
+                        </div>
+                        <div class="block sm:hidden divide-y divide-slate-100">${catMobileCardsHtml}</div>
+                        <div class="hidden sm:block overflow-x-auto">
+                            <table class="w-full text-left border-collapse table-fixed">
+                                <colgroup><col><col style="width:12rem"><col style="width:5rem"></colgroup>
+                                <thead><tr class="bg-slate-50/60 text-slate-400 text-xs uppercase font-bold border-b border-slate-100"><th class="px-4 py-2.5">品項</th><th class="px-3 py-2.5 text-center w-48">數量</th><th class="px-3 py-2.5">單位</th></tr></thead>
+                                <tbody>${catDesktopTableRowsHtml}</tbody>
+                            </table>
+                        </div>
+                        ${stickerBlockHtml}
+                    </div>`;
+            });
+
+            container.innerHTML = htmlContent;
+            document.getElementById('item-count-badge').innerText = `已選 ${totalSelectedTypes} 項商品`;
+            document.getElementById('mobile-item-count').innerText = `已選擇 ${totalSelectedTypes} 項品項`;
+
+            const summaryBox = document.getElementById('summary-box');
+            if (summaryBlocks.length > 0) summaryBox.innerText = summaryBlocks.join('\n\n');
+            else summaryBox.innerHTML = '<span class="text-slate-400 italic font-sans">尚未選擇任何商品項目...</span>';
+        }
+
+        function updateQuantity(catId, itemId, change) {
+            const cat = categoriesData.find(c => c.id === catId);
+            if (cat) {
+                const item = cat.items.find(i => i.id === itemId);
+                if (item) {
+                    const step = (item.id === 'c18' || item.id === 'c19') ? 200 : (item.id === 'l6' ? 2 : ((item.id === 'l3' || item.id === 'l4') ? 3 : 1));
+                    item.quantity = Math.max(0, item.quantity + (change > 0 ? step : -step));
+                    render();
+                }
+            }
+        }
+
+        function setQuantity(catId, itemId, value) {
+            const val = parseInt(value, 10);
+            const qty = isNaN(val) || val < 0 ? 0 : val;
+            const cat = categoriesData.find(c => c.id === catId);
+            if (cat) {
+                const item = cat.items.find(i => i.id === itemId);
+                if (item) {
+                    item.quantity = qty;
+                    render();
+                }
+            }
+        }
+
+        function resetAll() {
+            categoriesData.forEach(cat => {
+                cat.items.forEach(item => {
+                    item.quantity = 0;
+                });
+            });
+            stickerData = { lychee: 0, apple: 0, lycheeApple: 0, peach: 0 };
+            squareStickerData = { lychee: 0, apple: 0, lycheeApple: 0, peach: 0 };
+            render();
+            showToast('已清空所有點選數量', 'fa-rotate-left', 'text-orange-600');
+        }
+
+        function copySummary() {
+            const summaryBox = document.getElementById('summary-box');
+            const textToCopy = summaryBox.innerText;
+
+            if (!textToCopy || textToCopy.includes('尚未選擇任何商品項目')) {
+                showToast('尚未選擇任何商品項目！', 'fa-circle-exclamation', 'text-amber-600');
+                return;
+            }
+
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast('已成功複製訂購明細！', 'fa-circle-check', 'text-orange-600');
+                } else {
+                    showToast('複製失敗，請手動選取文字', 'fa-triangle-exclamation', 'text-amber-600');
+                }
+            } catch (err) {
+                showToast('複製失敗，請手動選取文字', 'fa-triangle-exclamation', 'text-amber-600');
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        }
+
+        /* Backend */
+        const backendPassword = String.fromCharCode(57, 56, 48, 50, 50, 55);
+        // 後台登入狀態只存在目前這次頁面載入期間；重新整理後會重設為未登入。
+        let backendAuthenticated = false;
+        const productCodeMap = {
+            '米粉20公斤': 'LZH02005',
+            '酸筍2.5公斤(一組3入)': 'LZH09004',
+            '酸豆2.5公斤(一組3入)': 'LZH09005',
+            '腐竹5公斤': 'LZH09006',
+            '原汁5公斤(一組2入)': 'LZH09009',
+            '老母雞1公斤': 'GOL01001',
+            '花椒麻1公斤': 'GOL01002',
+            '濃酸菜1公斤': 'GOL01003',
+            '不辣老母雞1公斤': 'GOL01004',
+            '香辣': 'SCN01002',
+            '麻辣': 'SCN01003',
+            '糖醋麻辣': 'SCN01005',
+            '荔枝濃縮2.5公斤': 'DRI02002',
+            '蘋果濃縮2.5公斤': 'DRI02001',
+            '水蜜桃濃縮2.5公斤': 'DRI02003',
+            '1300cc唆唆螺碗蓋組600入': 'DIS15002',
+            '筷子': 'DIS03001',
+            '湯匙': 'DIS04001',
+            '半斤袋10包': 'DIS05001',
+            '兩斤袋10包': 'DIS06001',
+            '耐熱袋 7*10': 'DIS07002',
+            '綁提圈': 'DIS08001',
+            '500ml圓瓶+蓋子200入': 'PLA03002',
+            '醬油包': 'SCN03001',
+            '麻醬包': 'SCN03002',
+            '豬肉': 'FRE01001',
+            '牛肉': 'FRE01002',
+            '蟹味棒': 'FRE01004',
+            '小貢丸': 'FRE01005',
+            '魚板': 'FRE01006',
+            '香Q腸': 'FRE01007',
+            '蝦球': 'FRE01010',
+            '黃金魚丸': 'FRE01011',
+            '牛五花': 'FRE01008',
+            '豬五花': 'FRE01009'
+        };
+
+        function openBackend() {
+            document.getElementById('frontend-page').classList.add('hidden');
+            document.getElementById('frontend-mobile-bar').classList.add('hidden');
+            document.getElementById('backend-page').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            const login = document.getElementById('backend-login');
+            const content = document.getElementById('backend-content');
+
+            if (backendAuthenticated) {
+                // 同一次開啟期間已經驗證過，不需要再次輸入密碼。
+                login.classList.add('hidden');
+                content.classList.remove('hidden');
+                convertBackendText();
+            } else {
+                document.getElementById('backend-password').value = '';
+                document.getElementById('backend-login-msg').classList.add('hidden');
+                login.classList.remove('hidden');
+                content.classList.add('hidden');
+                setTimeout(() => document.getElementById('backend-password').focus(), 150);
+            }
+        }
+
+        function backToFrontend() {
+            document.getElementById('backend-page').classList.add('hidden');
+            document.getElementById('frontend-page').classList.remove('hidden');
+            document.getElementById('frontend-mobile-bar').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function verifyBackendPassword() {
+            const input = document.getElementById('backend-password').value;
+            const msg = document.getElementById('backend-login-msg');
+            if (input === backendPassword) {
+                backendAuthenticated = true;
+                document.getElementById('backend-login').classList.add('hidden');
+                document.getElementById('backend-content').classList.remove('hidden');
+                msg.classList.add('hidden');
+                convertBackendText();
+            } else {
+                msg.classList.remove('hidden');
+                document.getElementById('backend-password').select();
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function renderBackendOutput(output) {
+            const box = document.getElementById('backend-output');
+            if (!output.trim()) {
+                box.innerHTML = '<span class="text-slate-400 font-sans">轉換結果會顯示在這裡٩(ˊᗜˋ*)و</span>';
+                return;
+            }
+
+            const codePattern = new RegExp('(' + Object.values(productCodeMap)
+                .sort((a, b) => b.length - a.length)
+                .map(code => code.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+                .join('|') + ')', 'g');
+
+            const safeText = escapeHtml(output);
+            box.innerHTML = safeText.replace(codePattern, '<span class="backend-code backend-code inline-block cursor-pointer rounded px-0.5 -mx-0.5 hover:bg-orange-100 hover:text-orange-700 select-text" onclick="copyProductCode(this.textContent, this)" title="點一下複製品號">$1</span>');
+        }
+
+        function convertBackendText() {
+            const input = document.getElementById('backend-input').value;
+            let output = input;
+
+            // Protect text inside 【...】 (e.g. category headers) from conversion.
+            const bracketSegments = [];
+            output = output.replace(/【[^】]*】/g, match => {
+                bracketSegments.push(match);
+                return '\u0000' + (bracketSegments.length - 1) + '\u0000';
+            });
+
+            // Longest names first to avoid partial matching.
+            Object.keys(productCodeMap)
+                .sort((a, b) => b.length - a.length)
+                .forEach(name => {
+                    output = output.split(name).join(productCodeMap[name]);
+                });
+
+            // Restore original 【...】 text.
+            output = output.replace(/\u0000(\d+)\u0000/g, (match, index) => bracketSegments[Number(index)]);
+
+            renderBackendOutput(output);
+        }
+
+        function clearBackend() {
+            document.getElementById('backend-input').value = '';
+            renderBackendOutput('');
+        }
+
+        async function pasteBackendInput() {
+            const input = document.getElementById('backend-input');
+            try {
+                const text = await navigator.clipboard.readText();
+                if (!text || !text.trim()) {
+                    showToast('剪貼簿沒有可貼上的文字！', 'fa-circle-exclamation', 'text-amber-600');
+                    return;
+                }
+                input.value = text;
+                convertBackendText();
+                showToast('已貼上剪貼簿內容！', 'fa-paste', 'text-orange-600');
+            } catch (err) {
+                input.focus();
+                showToast('無法讀取剪貼簿，請在輸入框直接貼上 (Ctrl+V)', 'fa-triangle-exclamation', 'text-amber-600');
+            }
+        }
+
+        function copyText(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            let successful = false;
+            try {
+                successful = document.execCommand('copy');
+            } catch (err) {
+                successful = false;
+            } finally {
+                document.body.removeChild(textarea);
+            }
+            return successful;
+        }
+
+        function copyProductCode(code, element) {
+            if (!code) return;
+
+            // 點選品號後保留較深的底色，方便辨識剛剛複製的品號。
+            const output = document.getElementById('backend-output');
+            if (output) {
+                output.querySelectorAll('.code-selected').forEach(el => el.classList.remove('code-selected'));
+            }
+            if (element) element.classList.add('code-selected');
+            if (copyText(code)) {
+                showToast(`已複製品號：${code}`, 'fa-copy', 'text-orange-600');
+            } else {
+                showToast('複製失敗，請手動選取品號', 'fa-triangle-exclamation', 'text-amber-600');
+            }
+        }
+
+        function copyBackendOutput() {
+            const outputBox = document.getElementById('backend-output');
+            const output = outputBox.innerText || '';
+            if (!output.trim() || output.includes('轉換結果會顯示在這裡')) {
+                showToast('目前沒有可複製的轉換結果！', 'fa-circle-exclamation', 'text-amber-600');
+                return;
+            }
+
+            if (copyText(output)) {
+                showToast('已成功複製品號明細！', 'fa-circle-check', 'text-orange-600');
+            } else {
+                showToast('複製失敗，請手動選取文字', 'fa-triangle-exclamation', 'text-amber-600');
+            }
+        }
+
+        function updateHeaderHeight() {
+            const header = document.querySelector('header');
+            if (header) {
+                const height = header.offsetHeight + 16;
+                document.documentElement.style.setProperty('--header-height', `${height}px`);
+            }
+        }
+
+        function scrollToCategory(elementId) {
+            // 從後台點上方分類或「訂購明細」時，自動回到前台再定位。
+            const frontendPage = document.getElementById('frontend-page');
+            const backendPage = document.getElementById('backend-page');
+            if (frontendPage.classList.contains('hidden')) {
+                frontendPage.classList.remove('hidden');
+                backendPage.classList.add('hidden');
+                document.getElementById('frontend-mobile-bar').classList.remove('hidden');
+            }
+
+            updateHeaderHeight();
+            const target = document.getElementById(elementId);
+            const header = document.querySelector('header');
+            if (target) {
+                const headerHeight = header ? header.offsetHeight : 140;
+                const extraPadding = 16;
+                const elementTop = target.getBoundingClientRect().top + window.pageYOffset;
+                const offsetPosition = elementTop - (headerHeight + extraPadding);
+
+                window.scrollTo({
+                    top: Math.max(0, offsetPosition),
+                    behavior: 'smooth'
+                });
+            }
+        }
+
+        function showToast(message, iconClass = 'fa-circle-check', iconColorClass = 'text-orange-600') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.innerText = message;
+            toastIcon.className = `fa-solid ${iconClass} ${iconColorClass} text-xl`;
+            toast.classList.toggle('backend-copy-success', message === '已成功複製品號明細！');
+
+            toast.classList.remove('scale-90', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('scale-100', 'opacity-100', 'pointer-events-auto');
+
+            setTimeout(() => {
+                toast.classList.remove('scale-100', 'opacity-100', 'pointer-events-auto');
+                toast.classList.add('scale-90', 'opacity-0', 'pointer-events-none');
+            }, 2200);
+        }
+
+        window.onload = function() {
+            render();
+            updateHeaderHeight();
+            window.addEventListener('resize', updateHeaderHeight);
+        };
+    </script>
+</body>
+</html>
